@@ -7,11 +7,10 @@ BUILD_DIR := build_make
 
 LIB_SRCS := \
 	$(SRC_DIR)/bench.cpp \
+	$(SRC_DIR)/encoders/boost_bin.cpp \
 	$(SRC_DIR)/encoders/bin_fixed.cpp \
 	$(SRC_DIR)/encoders/bin_offset_varint.cpp \
 	$(SRC_DIR)/encoders/delta_varint.cpp \
-	$(SRC_DIR)/encoders/json_arr.cpp \
-	$(SRC_DIR)/encoders/json_obj.cpp \
 	$(SRC_DIR)/encoders/mini_pbuf.cpp \
 	$(SRC_DIR)/generate.cpp \
 	$(SRC_DIR)/polygon_types.cpp \
@@ -26,6 +25,29 @@ MAIN_OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(MAIN_SRCS))
 TEST_OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(TEST_SRCS))
 
 INCLUDES := -I$(SRC_DIR)
+
+WITH_BOOST ?= auto
+BOOST_INC ?=
+BOOST_LIB ?=
+
+ifeq ($(WITH_BOOST),auto)
+  ifneq ("$(wildcard /usr/include/boost/archive/binary_oarchive.hpp)","")
+    WITH_BOOST := 1
+  else
+    WITH_BOOST := 0
+  endif
+endif
+
+ifeq ($(WITH_BOOST),1)
+  CXXFLAGS += -DPOLYBENCH_WITH_BOOST=1
+  ifneq ($(BOOST_INC),)
+    CXXFLAGS += -I$(BOOST_INC)
+  endif
+  ifneq ($(BOOST_LIB),)
+    LDFLAGS += -L$(BOOST_LIB)
+  endif
+  LDLIBS += -lboost_serialization
+endif
 
 .PHONY: all clean test bench
 
@@ -50,4 +72,3 @@ $(BUILD_DIR)/%.o: %.cpp
 
 clean:
 	rm -rf $(BUILD_DIR)
-

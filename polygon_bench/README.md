@@ -7,11 +7,10 @@
 本工具内置实现（均为自包含，无第三方依赖）：
 
 - `pbuf`：最小化 protobuf 兼容实现（对应 [polygon.proto](schemas/polygon.proto) 的 wire-format）
-- `json_obj`：JSON 对象点表达 `{"x":123,"y":456}`，整体结构为 `[[{...},{...}], ...]`
-- `json_arr`：JSON 数组点表达 `[123,456]`，整体结构为 `[[[x,y],[x,y]], ...]`
 - `bin_fixed`：自定义二进制（varint 写入数量 + little-endian int32 点坐标）
 - `bin_offset_varint`：自定义二进制（先写 min_x/min_y，再写相对坐标的 varint），用于消除“离原点远导致编码变大”的问题
 - `delta_varint`：自定义二进制（每个 polygon 内做 delta + ZigZag varint），用于利用点序列的局部连续性
+- `boost_bin`：Boost.Serialization 的 `binary_oarchive/binary_iarchive`（可选，检测到 Boost 后自动启用）
 
 ## 场景生成方式（与业务场景对齐）
 
@@ -103,6 +102,25 @@ sudo dnf install -y cmake
 ```
 
 安装后再执行 CMake 方式构建。
+
+### Boost 安装（用于启用 boost_bin）
+
+如果你希望对比 `boost_bin`，需要安装 Boost 的 Serialization 组件（头文件 + `libboost_serialization`）：
+
+```bash
+sudo yum install -y boost-devel
+```
+
+安装完成后：
+
+- CMake 构建会自动检测并启用 `boost_bin`
+- Makefile 构建会自动检测 `/usr/include/boost/...` 并启用 `boost_bin`
+
+如果你的 Boost 安装在非默认路径，可用：
+
+```bash
+make WITH_BOOST=1 BOOST_INC=/path/to/boost/include BOOST_LIB=/path/to/boost/lib -j
+```
 
 ## 运行基准测试
 

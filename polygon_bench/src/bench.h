@@ -26,14 +26,6 @@ struct BenchRow {
   double pbuf_enc_ms = 0.0;
   double pbuf_dec_ms = 0.0;
 
-  double json_obj_mb = 0.0;
-  double json_obj_enc_ms = 0.0;
-  double json_obj_dec_ms = 0.0;
-
-  double json_arr_mb = 0.0;
-  double json_arr_enc_ms = 0.0;
-  double json_arr_dec_ms = 0.0;
-
   double bin_fixed_mb = 0.0;
   double bin_fixed_enc_ms = 0.0;
   double bin_fixed_dec_ms = 0.0;
@@ -45,6 +37,12 @@ struct BenchRow {
   double delta_varint_mb = 0.0;
   double delta_varint_enc_ms = 0.0;
   double delta_varint_dec_ms = 0.0;
+
+#ifdef POLYBENCH_WITH_BOOST
+  double boost_bin_mb = 0.0;
+  double boost_bin_enc_ms = 0.0;
+  double boost_bin_dec_ms = 0.0;
+#endif
 
   double rss_mb = 0.0;
 };

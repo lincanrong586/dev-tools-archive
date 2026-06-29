@@ -5,11 +5,10 @@
 #include <numeric>
 #include <sstream>
 
+#include "encoders/boost_bin.h"
 #include "encoders/bin_fixed.h"
 #include "encoders/bin_offset_varint.h"
 #include "encoders/delta_varint.h"
-#include "encoders/json_arr.h"
-#include "encoders/json_obj.h"
 #include "encoders/mini_pbuf.h"
 #include "rss.h"
 
@@ -89,31 +88,18 @@ BenchRow RunScenarioBench(const GenerateConfig& gen_cfg, const BenchConfig& benc
   row.poly_mb = PolyDataMB(ps);
 
   MiniPbufEncoder pbuf;
-  JsonObjEncoder json_obj;
-  JsonArrEncoder json_arr;
   BinFixedEncoder bin_fixed;
   BinOffsetVarintEncoder bin_offset_varint;
   DeltaVarintEncoder delta_varint;
+#ifdef POLYBENCH_WITH_BOOST
+  BoostBinEncoder boost_bin;
+#endif
 
   {
     const auto r = Measure(pbuf, ps, bench_cfg);
     row.pbuf_mb = ToMB(r.bytes);
     row.pbuf_enc_ms = r.enc_ms;
     row.pbuf_dec_ms = r.dec_ms;
-  }
-
-  {
-    const auto r = Measure(json_obj, ps, bench_cfg);
-    row.json_obj_mb = ToMB(r.bytes);
-    row.json_obj_enc_ms = r.enc_ms;
-    row.json_obj_dec_ms = r.dec_ms;
-  }
-
-  {
-    const auto r = Measure(json_arr, ps, bench_cfg);
-    row.json_arr_mb = ToMB(r.bytes);
-    row.json_arr_enc_ms = r.enc_ms;
-    row.json_arr_dec_ms = r.dec_ms;
   }
 
   {
@@ -137,13 +123,31 @@ BenchRow RunScenarioBench(const GenerateConfig& gen_cfg, const BenchConfig& benc
     row.delta_varint_dec_ms = r.dec_ms;
   }
 
+#ifdef POLYBENCH_WITH_BOOST
+  {
+    const auto r = Measure(boost_bin, ps, bench_cfg);
+    row.boost_bin_mb = ToMB(r.bytes);
+    row.boost_bin_enc_ms = r.enc_ms;
+    row.boost_bin_dec_ms = r.dec_ms;
+  }
+#endif
+
   row.rss_mb = CurrentRSSMB();
   return row;
 }
 
 static void AppendHeader(std::ostringstream& out) {
-  out << "| scenario | polygons | points | poly(MB) | pbuf(MB) | pbuf_enc(ms) | pbuf_dec(ms) | json_obj(MB) | json_obj_enc(ms) | json_obj_dec(ms) | json_arr(MB) | json_arr_enc(ms) | json_arr_dec(ms) | bin_fixed(MB) | bin_fixed_enc(ms) | bin_fixed_dec(ms) | bin_offset_varint(MB) | bin_offset_varint_enc(ms) | bin_offset_varint_dec(ms) | delta_varint(MB) | delta_varint_enc(ms) | delta_varint_dec(ms) | rss(MB) |\n";
-  out << "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n";
+  out << "| scenario | polygons | points | poly(MB) | pbuf(MB) | pbuf_enc(ms) | pbuf_dec(ms) | bin_fixed(MB) | bin_fixed_enc(ms) | bin_fixed_dec(ms) | bin_offset_varint(MB) | bin_offset_varint_enc(ms) | bin_offset_varint_dec(ms) | delta_varint(MB) | delta_varint_enc(ms) | delta_varint_dec(ms) |";
+#ifdef POLYBENCH_WITH_BOOST
+  out << " boost_bin(MB) | boost_bin_enc(ms) | boost_bin_dec(ms) |";
+#endif
+  out << " rss(MB) |\n";
+
+  out << "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|";
+#ifdef POLYBENCH_WITH_BOOST
+  out << "---:|---:|---:|";
+#endif
+  out << "---:|\n";
 }
 
 static void AppendRow(std::ostringstream& out, const BenchRow& r) {
@@ -152,14 +156,15 @@ static void AppendRow(std::ostringstream& out, const BenchRow& r) {
     s << std::fixed << std::setprecision(3) << v;
     return s.str();
   };
-  out << "| " << r.scenario << " | " << r.polygons << " | " << r.points << " | " << f3(r.poly_mb) << " | "
-      << f3(r.pbuf_mb) << " | " << f3(r.pbuf_enc_ms) << " | " << f3(r.pbuf_dec_ms) << " | " << f3(r.json_obj_mb)
-      << " | " << f3(r.json_obj_enc_ms) << " | " << f3(r.json_obj_dec_ms) << " | " << f3(r.json_arr_mb) << " | "
-      << f3(r.json_arr_enc_ms) << " | " << f3(r.json_arr_dec_ms) << " | " << f3(r.bin_fixed_mb) << " | "
+  out << "| " << r.scenario << " | " << r.polygons << " | " << r.points << " | " << f3(r.poly_mb) << " | " << f3(r.pbuf_mb)
+      << " | " << f3(r.pbuf_enc_ms) << " | " << f3(r.pbuf_dec_ms) << " | " << f3(r.bin_fixed_mb) << " | "
       << f3(r.bin_fixed_enc_ms) << " | " << f3(r.bin_fixed_dec_ms) << " | " << f3(r.bin_offset_varint_mb) << " | "
-      << f3(r.bin_offset_varint_enc_ms) << " | " << f3(r.bin_offset_varint_dec_ms) << " | " << f3(r.delta_varint_mb)
-      << " | " << f3(r.delta_varint_enc_ms) << " | " << f3(r.delta_varint_dec_ms) << " | " << f3(r.rss_mb)
-      << " |\n";
+      << f3(r.bin_offset_varint_enc_ms) << " | " << f3(r.bin_offset_varint_dec_ms) << " | " << f3(r.delta_varint_mb) << " | "
+      << f3(r.delta_varint_enc_ms) << " | " << f3(r.delta_varint_dec_ms) << " |";
+#ifdef POLYBENCH_WITH_BOOST
+  out << " " << f3(r.boost_bin_mb) << " | " << f3(r.boost_bin_enc_ms) << " | " << f3(r.boost_bin_dec_ms) << " |";
+#endif
+  out << " " << f3(r.rss_mb) << " |\n";
 }
 
 static BenchRow AverageRow(const std::vector<BenchRow>& rows) {
@@ -179,12 +184,6 @@ static BenchRow AverageRow(const std::vector<BenchRow>& rows) {
   avg.pbuf_mb = avg1([](const BenchRow& r) { return r.pbuf_mb; });
   avg.pbuf_enc_ms = avg1([](const BenchRow& r) { return r.pbuf_enc_ms; });
   avg.pbuf_dec_ms = avg1([](const BenchRow& r) { return r.pbuf_dec_ms; });
-  avg.json_obj_mb = avg1([](const BenchRow& r) { return r.json_obj_mb; });
-  avg.json_obj_enc_ms = avg1([](const BenchRow& r) { return r.json_obj_enc_ms; });
-  avg.json_obj_dec_ms = avg1([](const BenchRow& r) { return r.json_obj_dec_ms; });
-  avg.json_arr_mb = avg1([](const BenchRow& r) { return r.json_arr_mb; });
-  avg.json_arr_enc_ms = avg1([](const BenchRow& r) { return r.json_arr_enc_ms; });
-  avg.json_arr_dec_ms = avg1([](const BenchRow& r) { return r.json_arr_dec_ms; });
   avg.bin_fixed_mb = avg1([](const BenchRow& r) { return r.bin_fixed_mb; });
   avg.bin_fixed_enc_ms = avg1([](const BenchRow& r) { return r.bin_fixed_enc_ms; });
   avg.bin_fixed_dec_ms = avg1([](const BenchRow& r) { return r.bin_fixed_dec_ms; });
@@ -194,6 +193,11 @@ static BenchRow AverageRow(const std::vector<BenchRow>& rows) {
   avg.delta_varint_mb = avg1([](const BenchRow& r) { return r.delta_varint_mb; });
   avg.delta_varint_enc_ms = avg1([](const BenchRow& r) { return r.delta_varint_enc_ms; });
   avg.delta_varint_dec_ms = avg1([](const BenchRow& r) { return r.delta_varint_dec_ms; });
+#ifdef POLYBENCH_WITH_BOOST
+  avg.boost_bin_mb = avg1([](const BenchRow& r) { return r.boost_bin_mb; });
+  avg.boost_bin_enc_ms = avg1([](const BenchRow& r) { return r.boost_bin_enc_ms; });
+  avg.boost_bin_dec_ms = avg1([](const BenchRow& r) { return r.boost_bin_dec_ms; });
+#endif
   avg.rss_mb = avg1([](const BenchRow& r) { return r.rss_mb; });
   return avg;
 }

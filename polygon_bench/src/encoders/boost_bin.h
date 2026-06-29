@@ -4,10 +4,7 @@
 
 namespace polybench {
 
-// JSON 数组点表达：
-// - Point: [123,456]
-// - PolygonSet: [ [ [x,y],[x,y] ], [ [x,y] ] ]
-class JsonArrEncoder final : public Encoder {
+class BoostBinEncoder final : public Encoder {
  public:
   std::string Name() const override;
   EncodeResult Encode(const PolygonSet& polygon_set) const override;
@@ -15,3 +12,4 @@ class JsonArrEncoder final : public Encoder {
 };
 
 }  // namespace polybench
+

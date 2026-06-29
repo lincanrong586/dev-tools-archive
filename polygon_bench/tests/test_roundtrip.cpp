@@ -2,11 +2,10 @@
 #include <iostream>
 #include <string>
 
+#include "encoders/boost_bin.h"
 #include "encoders/bin_fixed.h"
 #include "encoders/bin_offset_varint.h"
 #include "encoders/delta_varint.h"
-#include "encoders/json_arr.h"
-#include "encoders/json_obj.h"
 #include "encoders/mini_pbuf.h"
 #include "generate.h"
 
@@ -46,11 +45,12 @@ int main() {
       const auto ps = polybench::GeneratePolygonSet(cfg);
 
       RoundTripTest<polybench::MiniPbufEncoder>(ps);
-      RoundTripTest<polybench::JsonObjEncoder>(ps);
-      RoundTripTest<polybench::JsonArrEncoder>(ps);
       RoundTripTest<polybench::BinFixedEncoder>(ps);
       RoundTripTest<polybench::BinOffsetVarintEncoder>(ps);
       RoundTripTest<polybench::DeltaVarintEncoder>(ps);
+#ifdef POLYBENCH_WITH_BOOST
+      RoundTripTest<polybench::BoostBinEncoder>(ps);
+#endif
     }
 
     if (g_failed == 0) {
