@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+// Reference schema for the "pbuf" benchmark.
+//
+// This repo implements a minimal protobuf-compatible encoder/decoder for this
+// exact schema (without linking libprotobuf), so the wire format matches the
+// common protobuf encoding:
+// - length-delimited nested messages
+// - ZigZag + varint for sint32
+message Point {
+  sint32 x = 1;
+  sint32 y = 2;
+}
+
+message Polygon {
+  repeated Point points = 1;
+}
+
+message PolygonSet {
+  repeated Polygon polygons = 1;
+}
+
