@@ -60,11 +60,11 @@ test: $(BUILD_DIR)/polygon_bench_tests
 
 $(BUILD_DIR)/polygon_bench: $(LIB_OBJS) $(MAIN_OBJS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(BUILD_DIR)/polygon_bench_tests: $(LIB_OBJS) $(TEST_OBJS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)

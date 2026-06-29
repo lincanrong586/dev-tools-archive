@@ -9,13 +9,6 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <sstream>
-#endif
-
-namespace polybench {
-
-std::string BoostBinEncoder::Name() const { return "boost_bin"; }
-
-#ifdef POLYBENCH_WITH_BOOST
 namespace boost::serialization {
 
 template <class Archive>
@@ -26,6 +19,10 @@ void serialize(Archive& ar, polybench::Point& p, const unsigned int) {
 
 }  // namespace boost::serialization
 #endif
+
+namespace polybench {
+
+std::string BoostBinEncoder::Name() const { return "boost_bin"; }
 
 EncodeResult BoostBinEncoder::Encode(const PolygonSet& polygon_set) const {
 #ifndef POLYBENCH_WITH_BOOST
@@ -57,4 +54,3 @@ DecodeResult BoostBinEncoder::Decode(const std::vector<uint8_t>& bytes) const {
 }
 
 }  // namespace polybench
-
