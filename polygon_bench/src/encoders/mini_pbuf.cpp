@@ -14,11 +14,11 @@ static void AppendTag(uint32_t field_number, uint32_t wire_type, std::vector<uin
 
 static std::vector<uint8_t> EncodePoint(const Point& p) {
   std::vector<uint8_t> out;
-  out.reserve(16);
+  out.reserve(24);
   AppendTag(1, 0, out);
-  AppendUVarint(ZigZagEncode32(p.x), out);
+  AppendUVarint64(ZigZagEncode64(p.x), out);
   AppendTag(2, 0, out);
-  AppendUVarint(ZigZagEncode32(p.y), out);
+  AppendUVarint64(ZigZagEncode64(p.y), out);
   return out;
 }
 
@@ -73,9 +73,9 @@ static Point DecodePoint(const uint8_t* p, const uint8_t* end) {
       SkipField(wire, p, end);
       continue;
     }
-    const uint32_t v = ReadUVarint(p, end);
-    if (field == 1) pt.x = ZigZagDecode32(v);
-    else if (field == 2) pt.y = ZigZagDecode32(v);
+    const uint64_t v = ReadUVarint64(p, end);
+    if (field == 1) pt.x = ZigZagDecode64(v);
+    else if (field == 2) pt.y = ZigZagDecode64(v);
   }
   return pt;
 }

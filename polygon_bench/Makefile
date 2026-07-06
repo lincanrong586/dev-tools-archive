@@ -11,6 +11,7 @@ LIB_SRCS := \
 	$(SRC_DIR)/encoders/bin_fixed.cpp \
 	$(SRC_DIR)/encoders/bin_offset_varint.cpp \
 	$(SRC_DIR)/encoders/delta_varint.cpp \
+	$(SRC_DIR)/encoders/delta_windowmin_varint.cpp \
 	$(SRC_DIR)/encoders/mini_pbuf.cpp \
 	$(SRC_DIR)/generate.cpp \
 	$(SRC_DIR)/polygon_types.cpp \

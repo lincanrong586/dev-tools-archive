@@ -14,6 +14,7 @@ add_library(polygon_bench_lib
   src/encoders/bin_fixed.cpp
   src/encoders/bin_offset_varint.cpp
   src/encoders/delta_varint.cpp
+  src/encoders/delta_windowmin_varint.cpp
   src/encoders/mini_pbuf.cpp
   src/generate.cpp
   src/polygon_types.cpp

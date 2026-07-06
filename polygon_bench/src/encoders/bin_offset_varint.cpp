@@ -10,8 +10,8 @@ namespace polybench {
 std::string BinOffsetVarintEncoder::Name() const { return "bin_offset_varint"; }
 
 EncodeResult BinOffsetVarintEncoder::Encode(const PolygonSet& polygon_set) const {
-  int32_t min_x = 0;
-  int32_t min_y = 0;
+  long long min_x = 0;
+  long long min_y = 0;
   bool first = true;
   for (const auto& poly : polygon_set) {
     for (const auto& p : poly) {
@@ -30,17 +30,17 @@ EncodeResult BinOffsetVarintEncoder::Encode(const PolygonSet& polygon_set) const
   auto& out = r.bytes;
   out.reserve(polygon_set.size() * 4);
 
-  AppendUVarint(ZigZagEncode32(min_x), out);
-  AppendUVarint(ZigZagEncode32(min_y), out);
+  AppendUVarint64(ZigZagEncode64(min_x), out);
+  AppendUVarint64(ZigZagEncode64(min_y), out);
 
   AppendUVarint(static_cast<uint32_t>(polygon_set.size()), out);
   for (const auto& poly : polygon_set) {
     AppendUVarint(static_cast<uint32_t>(poly.size()), out);
     for (const auto& p : poly) {
-      const uint32_t rx = static_cast<uint32_t>(p.x - min_x);
-      const uint32_t ry = static_cast<uint32_t>(p.y - min_y);
-      AppendUVarint(rx, out);
-      AppendUVarint(ry, out);
+      const uint64_t rx = static_cast<uint64_t>(p.x - min_x);
+      const uint64_t ry = static_cast<uint64_t>(p.y - min_y);
+      AppendUVarint64(rx, out);
+      AppendUVarint64(ry, out);
     }
   }
   return r;
@@ -50,8 +50,8 @@ DecodeResult BinOffsetVarintEncoder::Decode(const std::vector<uint8_t>& bytes) c
   const uint8_t* p = bytes.data();
   const uint8_t* end = bytes.data() + bytes.size();
 
-  const int32_t min_x = ZigZagDecode32(ReadUVarint(p, end));
-  const int32_t min_y = ZigZagDecode32(ReadUVarint(p, end));
+  const long long min_x = ZigZagDecode64(ReadUVarint64(p, end));
+  const long long min_y = ZigZagDecode64(ReadUVarint64(p, end));
 
   DecodeResult r;
   const uint32_t polygons = ReadUVarint(p, end);
@@ -62,11 +62,11 @@ DecodeResult BinOffsetVarintEncoder::Decode(const std::vector<uint8_t>& bytes) c
     Polygon poly;
     poly.reserve(points);
     for (uint32_t j = 0; j < points; ++j) {
-      const uint32_t rx = ReadUVarint(p, end);
-      const uint32_t ry = ReadUVarint(p, end);
+      const uint64_t rx = ReadUVarint64(p, end);
+      const uint64_t ry = ReadUVarint64(p, end);
       Point pt;
-      pt.x = min_x + static_cast<int32_t>(rx);
-      pt.y = min_y + static_cast<int32_t>(ry);
+      pt.x = min_x + static_cast<long long>(rx);
+      pt.y = min_y + static_cast<long long>(ry);
       poly.push_back(pt);
     }
     r.polygon_set.push_back(std::move(poly));

@@ -17,8 +17,8 @@ EncodeResult BinFixedEncoder::Encode(const PolygonSet& polygon_set) const {
   for (const auto& poly : polygon_set) {
     AppendUVarint(static_cast<uint32_t>(poly.size()), out);
     for (const auto& p : poly) {
-      AppendI32LE(p.x, out);
-      AppendI32LE(p.y, out);
+      AppendI64LE(p.x, out);
+      AppendI64LE(p.y, out);
     }
   }
   return r;
@@ -38,8 +38,8 @@ DecodeResult BinFixedEncoder::Decode(const std::vector<uint8_t>& bytes) const {
     poly.reserve(points);
     for (uint32_t j = 0; j < points; ++j) {
       Point pt;
-      pt.x = ReadI32LE(p, end);
-      pt.y = ReadI32LE(p, end);
+      pt.x = ReadI64LE(p, end);
+      pt.y = ReadI64LE(p, end);
       poly.push_back(pt);
     }
     r.polygon_set.push_back(std::move(poly));

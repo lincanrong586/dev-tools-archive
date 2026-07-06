@@ -17,13 +17,13 @@ EncodeResult DeltaVarintEncoder::Encode(const PolygonSet& polygon_set) const {
   for (const auto& poly : polygon_set) {
     AppendUVarint(static_cast<uint32_t>(poly.size()), out);
 
-    int32_t prev_x = 0;
-    int32_t prev_y = 0;
+    long long prev_x = 0;
+    long long prev_y = 0;
     bool first = true;
 
     for (const auto& p : poly) {
-      int32_t dx = p.x;
-      int32_t dy = p.y;
+      long long dx = p.x;
+      long long dy = p.y;
       if (!first) {
         dx = p.x - prev_x;
         dy = p.y - prev_y;
@@ -32,8 +32,8 @@ EncodeResult DeltaVarintEncoder::Encode(const PolygonSet& polygon_set) const {
       prev_x = p.x;
       prev_y = p.y;
 
-      AppendUVarint(ZigZagEncode32(dx), out);
-      AppendUVarint(ZigZagEncode32(dy), out);
+      AppendUVarint64(ZigZagEncode64(dx), out);
+      AppendUVarint64(ZigZagEncode64(dy), out);
     }
   }
   return r;
@@ -52,13 +52,13 @@ DecodeResult DeltaVarintEncoder::Decode(const std::vector<uint8_t>& bytes) const
     Polygon poly;
     poly.reserve(points);
 
-    int32_t prev_x = 0;
-    int32_t prev_y = 0;
+    long long prev_x = 0;
+    long long prev_y = 0;
     bool first = true;
 
     for (uint32_t j = 0; j < points; ++j) {
-      const int32_t dx = ZigZagDecode32(ReadUVarint(p, end));
-      const int32_t dy = ZigZagDecode32(ReadUVarint(p, end));
+      const long long dx = ZigZagDecode64(ReadUVarint64(p, end));
+      const long long dy = ZigZagDecode64(ReadUVarint64(p, end));
 
       Point pt;
       if (first) {

@@ -9,7 +9,7 @@ namespace polybench {
 // 对应的参考 schema 见 schemas/polygon.proto：
 // PolygonSet { repeated Polygon polygons = 1; }
 // Polygon    { repeated Point points   = 1; }
-// Point      { sint32 x = 1; sint32 y = 2; }
+// Point      { sint64 x = 1; sint64 y = 2; }
 class MiniPbufEncoder final : public Encoder {
  public:
   std::string Name() const override;

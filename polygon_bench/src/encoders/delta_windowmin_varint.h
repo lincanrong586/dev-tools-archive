@@ -4,12 +4,7 @@
 
 namespace polybench {
 
-// 自定义二进制编码（基线）：
-// - polygons_count: uvarint
-// - for each polygon:
-//     - points_count: uvarint
-//     - for each point: x(int64 LE) + y(int64 LE)
-class BinFixedEncoder final : public Encoder {
+class DeltaWindowMinVarintEncoder final : public Encoder {
  public:
   std::string Name() const override;
   EncodeResult Encode(const PolygonSet& polygon_set) const override;
@@ -17,3 +12,4 @@ class BinFixedEncoder final : public Encoder {
 };
 
 }  // namespace polybench
+

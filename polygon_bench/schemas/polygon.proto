@@ -6,10 +6,10 @@ syntax = "proto3";
 // exact schema (without linking libprotobuf), so the wire format matches the
 // common protobuf encoding:
 // - length-delimited nested messages
-// - ZigZag + varint for sint32
+// - ZigZag + varint for sint64
 message Point {
-  sint32 x = 1;
-  sint32 y = 2;
+  sint64 x = 1;
+  sint64 y = 2;
 }
 
 message Polygon {
@@ -19,4 +19,3 @@ message Polygon {
 message PolygonSet {
   repeated Polygon polygons = 1;
 }
-
