@@ -4,7 +4,7 @@
 
 ## 目录
 
-- `polygon_bench/`：PolygonSet 编码格式基准测试工具，包含 `pbuf`、`json_obj`、`json_arr`、`bin_fixed`、`bin_offset_varint`、`delta_varint` 的对比测试代码与说明。
+- `polygon_codec/`：PolygonSet 业务编解码库（含算法工厂/自描述 frame/UT/bench-perftest）。
 
 ## 使用说明
 
