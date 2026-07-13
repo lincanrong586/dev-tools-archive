@@ -7,9 +7,9 @@ namespace polygon_codec {
 namespace {
 
 // 包头格式（固定 8 字节）：
-// magic(4) + version(1) + algorithm(1) + flags(1) + reserved(1)
+// magic(4) + version(1) + algorithm(1) + coordinate_scale(1) + reserved(1)
 constexpr std::array<uint8_t, 4> kMagic = {'P', 'C', 'O', 'D'};
-constexpr uint8_t kVersion = 1;
+constexpr uint8_t kVersion = 2;
 constexpr size_t kHeaderSize = 8;
 
 static bool IsValidAlgorithmByte(uint8_t v) {
@@ -18,15 +18,21 @@ static bool IsValidAlgorithmByte(uint8_t v) {
   return v >= low && v < high;
 }
 
+static bool IsValidCoordinateScaleByte(uint8_t v) {
+  const uint8_t low = static_cast<uint8_t>(CoordinateScale::kNm0p1);
+  const uint8_t high = static_cast<uint8_t>(CoordinateScale::kUm1);
+  return v >= low && v <= high;
+}
+
 }  // namespace
 
-std::vector<uint8_t> WrapFrame(Algorithm algo, const std::vector<uint8_t>& payload) {
+std::vector<uint8_t> WrapFrame(Algorithm algo, CoordinateScale coordinate_scale, const std::vector<uint8_t>& payload) {
   std::vector<uint8_t> out;
   out.reserve(kHeaderSize + payload.size());
   out.insert(out.end(), kMagic.begin(), kMagic.end());
   out.push_back(kVersion);
   out.push_back(static_cast<uint8_t>(algo));
-  out.push_back(0);
+  out.push_back(static_cast<uint8_t>(coordinate_scale));
   out.push_back(0);
   out.insert(out.end(), payload.begin(), payload.end());
   return out;
@@ -38,13 +44,20 @@ StatusOr<FrameHeader> ParseHeader(const std::vector<uint8_t>& bytes) {
     if (bytes[i] != kMagic[i]) return Status::Error("codec_frame: magic 不匹配，数据不是 polygon_codec 格式");
   }
   const uint8_t version = bytes[4];
-  if (version != kVersion) return Status::Error("codec_frame: 版本不兼容");
+  if (version != 1 && version != kVersion) return Status::Error("codec_frame: 版本不兼容");
 
   const uint8_t algo_v = bytes[5];
   if (!IsValidAlgorithmByte(algo_v)) return Status::Error("codec_frame: algorithm 字段非法");
 
   FrameHeader h;
   h.algorithm = static_cast<Algorithm>(algo_v);
+  if (version == 1) {
+    h.coordinate_scale = CoordinateScale::kNm1;
+  } else {
+    const uint8_t scale_v = bytes[6];
+    if (!IsValidCoordinateScaleByte(scale_v)) return Status::Error("codec_frame: coordinate_scale 字段非法");
+    h.coordinate_scale = static_cast<CoordinateScale>(scale_v);
+  }
   return h;
 }
 

@@ -21,10 +21,30 @@ constexpr double kOrthogonalSnapRatio = 0.45;
 constexpr double kDiagonalSnapRatio = 0.75;
 constexpr double kRadiusBaseRatio = 0.65;
 constexpr double kRadiusJitterRatio = 0.35;
-constexpr long long kNmPerUm = 1000;
+constexpr long long kTicksPerUmNm0p1 = 10000;
+constexpr long long kTicksPerUmNm1 = 1000;
+constexpr long long kTicksPerUmNm10 = 100;
+constexpr long long kTicksPerUmNm100 = 10;
+constexpr long long kTicksPerUmUm1 = 1;
 constexpr uint32_t kMaskMinPointsPerPolygon = 300;
 constexpr uint32_t kMaskMinPolygonPoints = 200;
 constexpr uint32_t kMaskMaxPolygonPoints = 2000;
+
+static long long TicksPerUm(CoordinateScale scale) {
+  switch (scale) {
+    case CoordinateScale::kNm0p1:
+      return kTicksPerUmNm0p1;
+    case CoordinateScale::kNm1:
+      return kTicksPerUmNm1;
+    case CoordinateScale::kNm10:
+      return kTicksPerUmNm10;
+    case CoordinateScale::kNm100:
+      return kTicksPerUmNm100;
+    case CoordinateScale::kUm1:
+      return kTicksPerUmUm1;
+  }
+  return kTicksPerUmNm0p1;
+}
 
 int32_t EffectiveCutWidth(const GenerateConfig& cfg) { return cfg.cut_size_um > 0 ? cfg.cut_size_um : cfg.cut_width_um; }
 int32_t EffectiveCutHeight(const GenerateConfig& cfg) { return cfg.cut_size_um > 0 ? cfg.cut_size_um : cfg.cut_height_um; }
@@ -182,7 +202,7 @@ static Polygon ClipPolygonToRect(const Polygon& poly, const RectLL& r) {
   return p;
 }
 
-static Polygon GenerateMaskLikePolygon(long long cx, long long cy, long long radius_nm, uint32_t points, std::mt19937& rng) {
+static Polygon GenerateMaskLikePolygon(long long cx, long long cy, long long radius, uint32_t points, std::mt19937& rng) {
   const uint32_t control = std::max(kMaskMinControlPoints, std::min(kMaskMaxControlPoints, points / kMaskControlPointDivisor));
   std::uniform_real_distribution<double> jitter01(0.0, 1.0);
   constexpr double kPi = 3.14159265358979323846;
@@ -201,7 +221,7 @@ static Polygon GenerateMaskLikePolygon(long long cx, long long cy, long long rad
       angle = std::round(angle / (kPi / 4.0)) * (kPi / 4.0);
     }
 
-    const double rr = static_cast<double>(radius_nm) * (kRadiusBaseRatio + kRadiusJitterRatio * jitter01(rng));
+    const double rr = static_cast<double>(radius) * (kRadiusBaseRatio + kRadiusJitterRatio * jitter01(rng));
     const long long x = cx + static_cast<long long>(std::llround(rr * std::cos(angle)));
     const long long y = cy + static_cast<long long>(std::llround(rr * std::sin(angle)));
     control_pts.push_back({x, y});
@@ -230,15 +250,14 @@ static Polygon GenerateMaskLikePolygon(long long cx, long long cy, long long rad
 }
 
 static PolygonSet GenerateMaskLikePolygonSet(const GenerateConfig& cfg, std::mt19937& rng) {
-  // 将 um 坐标转成 nm 栅格：1um=1000nm。
-  constexpr long long kScale = kNmPerUm;
-  const long long region_nm = static_cast<long long>(cfg.region_size_um) * kScale;
-  const long long cut_w_nm = static_cast<long long>(EffectiveCutWidth(cfg)) * kScale;
-  const long long cut_h_nm = static_cast<long long>(EffectiveCutHeight(cfg)) * kScale;
+  const long long ticks_per_um = TicksPerUm(cfg.coordinate_scale);
+  const long long region_nm = static_cast<long long>(cfg.region_size_um) * ticks_per_um;
+  const long long cut_w_nm = static_cast<long long>(EffectiveCutWidth(cfg)) * ticks_per_um;
+  const long long cut_h_nm = static_cast<long long>(EffectiveCutHeight(cfg)) * ticks_per_um;
 
   const auto [x0_um, y0_um] = ScenarioOrigin(cfg);
-  const long long x0 = static_cast<long long>(x0_um) * kScale;
-  const long long y0 = static_cast<long long>(y0_um) * kScale;
+  const long long x0 = static_cast<long long>(x0_um) * ticks_per_um;
+  const long long y0 = static_cast<long long>(y0_um) * ticks_per_um;
 
   RectLL window;
   window.x0 = x0;
@@ -336,9 +355,14 @@ PolygonSet GeneratePolygonSet(const GenerateConfig& cfg) {
   const int32_t cut_width_um = EffectiveCutWidth(cfg);
   const int32_t cut_height_um = EffectiveCutHeight(cfg);
 
-  // RandomPoints 只要求点在窗口范围内；不额外保证点序沿边界连续。
-  std::uniform_int_distribution<int32_t> dx(0, std::max(0, cut_width_um - 1));
-  std::uniform_int_distribution<int32_t> dy(0, std::max(0, cut_height_um - 1));
+  const long long ticks_per_um = TicksPerUm(cfg.coordinate_scale);
+  const long long cut_w = static_cast<long long>(cut_width_um) * ticks_per_um;
+  const long long cut_h = static_cast<long long>(cut_height_um) * ticks_per_um;
+  const long long base_x = static_cast<long long>(x0) * ticks_per_um;
+  const long long base_y = static_cast<long long>(y0) * ticks_per_um;
+
+  std::uniform_int_distribution<long long> dx(0, std::max(0LL, cut_w - 1));
+  std::uniform_int_distribution<long long> dy(0, std::max(0LL, cut_h - 1));
 
   PolygonSet ps;
   ps.reserve(point_counts.size());
@@ -346,7 +370,7 @@ PolygonSet GeneratePolygonSet(const GenerateConfig& cfg) {
     Polygon poly;
     poly.reserve(count);
     for (uint32_t i = 0; i < count; ++i) {
-      poly.push_back(Point{static_cast<long long>(x0 + dx(rng)), static_cast<long long>(y0 + dy(rng))});
+      poly.push_back(Point{base_x + dx(rng), base_y + dy(rng)});
     }
     ps.push_back(std::move(poly));
   }

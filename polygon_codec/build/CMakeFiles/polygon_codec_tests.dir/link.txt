@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/polygon_codec_tests.dir/tests/test_codec.cc.o -o polygon_codec_tests  libpolygon_codec_lib.a 

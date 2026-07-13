@@ -94,6 +94,46 @@ static bool ParseI32(const std::string& s, int32_t& out) {
   return true;
 }
 
+static std::string CoordinateScaleName(CoordinateScale scale) {
+  switch (scale) {
+    case CoordinateScale::kNm0p1:
+      return "0.1nm";
+    case CoordinateScale::kNm1:
+      return "1nm";
+    case CoordinateScale::kNm10:
+      return "10nm";
+    case CoordinateScale::kNm100:
+      return "100nm";
+    case CoordinateScale::kUm1:
+      return "1um";
+  }
+  return "unknown";
+}
+
+static bool ParseCoordinateScale(const std::string& s, CoordinateScale& out) {
+  if (s == "0.1nm") {
+    out = CoordinateScale::kNm0p1;
+    return true;
+  }
+  if (s == "1nm") {
+    out = CoordinateScale::kNm1;
+    return true;
+  }
+  if (s == "10nm") {
+    out = CoordinateScale::kNm10;
+    return true;
+  }
+  if (s == "100nm") {
+    out = CoordinateScale::kNm100;
+    return true;
+  }
+  if (s == "1um") {
+    out = CoordinateScale::kUm1;
+    return true;
+  }
+  return false;
+}
+
 static void PrintUsage() {
   std::cout << "polygon_codec_bench usage:\n"
             << "  ./build/polygon_codec_bench --iterations N [options]\n\n"
@@ -105,6 +145,7 @@ static void PrintUsage() {
             << "  --polygons N             期望 polygon 数中心值（默认 " << kDefaultPolygons << "）\n"
             << "  --points-per-polygon N   期望平均点数（默认 " << kDefaultPointsPerPolygon
             << "；mask_like 会自动抬高）\n"
+            << "  --scale S                point(x,y) 的取值单位（默认 0.1nm；可选：0.1nm/1nm/10nm/100nm/1um）\n"
             << "  --region-size-um N       大区域边长（um，默认 " << kDefaultRegionSizeUm << "）\n"
             << "  --cut-size-um N          旧式正方形窗口（um，>0 时覆盖宽高）\n"
             << "  --cut-width-um N         矩形窗口宽（um）\n"
@@ -132,6 +173,7 @@ static ReportRow RunScenario(GenerateConfig gen_cfg, uint32_t iterations, const 
   Options opt;
   opt.enable_metrics = false;
   opt.print_metrics = false;
+  opt.coordinate_scale = gen_cfg.coordinate_scale;
 
   for (uint32_t i = 0; i < iterations; ++i) {
     gen_cfg.seed = gen_cfg.seed + i;
@@ -237,6 +279,10 @@ int main(int argc, char** argv) {
       ParseI32(need("--cut-width-um"), cfg.cut_width_um);
     } else if (a == "--cut-height-um") {
       ParseI32(need("--cut-height-um"), cfg.cut_height_um);
+    } else if (a == "--scale") {
+      if (!ParseCoordinateScale(need("--scale"), cfg.coordinate_scale)) {
+        throw std::runtime_error("invalid --scale value");
+      }
     } else {
       throw std::runtime_error("unknown arg: " + a);
     }
@@ -246,11 +292,13 @@ int main(int argc, char** argv) {
 
   GenerateConfig random_cfg = cfg;
   random_cfg.kind = GenerateKind::RandomPoints;
-  std::cout << RenderMarkdown("random_points", RunAllScenarios(random_cfg, iterations, algos), true);
+  std::cout << RenderMarkdown("random_points (scale=" + CoordinateScaleName(cfg.coordinate_scale) + ")",
+                              RunAllScenarios(random_cfg, iterations, algos), true);
 
   GenerateConfig mask_cfg = cfg;
   mask_cfg.kind = GenerateKind::MaskLike;
-  std::cout << RenderMarkdown("mask_like", RunAllScenarios(mask_cfg, iterations, algos), true);
+  std::cout << RenderMarkdown("mask_like (scale=" + CoordinateScaleName(cfg.coordinate_scale) + ")",
+                              RunAllScenarios(mask_cfg, iterations, algos), true);
 
   return 0;
 }

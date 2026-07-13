@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 
+#include "../codec.h"
 #include "../types.h"
 
 namespace polygon_codec::perftest {
@@ -40,6 +41,8 @@ enum class GenerateKind {
 struct GenerateConfig {
   GenerateKind kind = GenerateKind::RandomPoints;
   ScenarioKind scenario = ScenarioKind::NearOrigin;
+
+  CoordinateScale coordinate_scale = CoordinateScale::kNm0p1;
 
   // seed 用于可复现随机生成；benchmark 中通常会做 seed+i 来生成多轮不同数据。
   uint32_t seed = kDefaultSeed;

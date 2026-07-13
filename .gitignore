@@ -2,3 +2,12 @@
 /polygon_bench/build_make/
 /polygon_bench.zip
 
+/polygon_codec/build/
+/polygon_codec/build_make/
+
+*.o
+*.a
+*.so
+
+polygon_codec.zip
+report.md

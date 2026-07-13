@@ -24,6 +24,14 @@ enum class Algorithm : uint8_t {
   kButt = 7,
 };
 
+enum class CoordinateScale : uint8_t {
+  kNm0p1 = 1,
+  kNm1 = 2,
+  kNm10 = 3,
+  kNm100 = 4,
+  kUm1 = 5,
+};
+
 // Metrics 为“可选统计信息”。
 //
 // 注意：
@@ -55,16 +63,20 @@ struct Options {
 
   // print_metrics 控制是否打印统计信息；只有 enable_metrics=true 时才生效；默认关闭。
   bool print_metrics = false;
+
+  CoordinateScale coordinate_scale = CoordinateScale::kNm0p1;
 };
 
 struct EncodeOutput {
   Algorithm algorithm = Algorithm::kBinFixed;
+  CoordinateScale coordinate_scale = CoordinateScale::kNm0p1;
   std::vector<uint8_t> bytes;
   Metrics metrics;
 };
 
 struct DecodeOutput {
   Algorithm algorithm = Algorithm::kBinFixed;
+  CoordinateScale coordinate_scale = CoordinateScale::kNm0p1;
   PolygonSet polygon_set;
   Metrics metrics;
 };

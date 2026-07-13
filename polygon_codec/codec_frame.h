@@ -15,6 +15,7 @@ namespace polygon_codec {
 // - 标识 payload 使用的算法（algorithm）
 struct FrameHeader {
   Algorithm algorithm = Algorithm::kBinFixed;
+  CoordinateScale coordinate_scale = CoordinateScale::kNm0p1;
 };
 
 // PayloadView 表示 frame 中 payload 的零拷贝视图。
@@ -25,7 +26,7 @@ struct PayloadView {
 };
 
 // WrapFrame 会将 payload 包上一层统一包头，形成可自描述字节流。
-std::vector<uint8_t> WrapFrame(Algorithm algo, const std::vector<uint8_t>& payload);
+std::vector<uint8_t> WrapFrame(Algorithm algo, CoordinateScale coordinate_scale, const std::vector<uint8_t>& payload);
 
 // ParseHeader 解析包头（不复制 payload）。
 StatusOr<FrameHeader> ParseHeader(const std::vector<uint8_t>& bytes);

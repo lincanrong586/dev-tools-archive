@@ -16,11 +16,12 @@ StatusOr<EncodeOutput> Codec::Encode(const PolygonSet& ps, Algorithm algo, const
 
     EncodeOutput out;
     out.algorithm = algo;
+    out.coordinate_scale = opt.coordinate_scale;
 
     const bool enable_metrics = opt.enable_metrics;
     const auto t0 = std::chrono::steady_clock::now();
     const std::vector<uint8_t> payload = codec->EncodePayload(ps);
-    out.bytes = WrapFrame(algo, payload);
+    out.bytes = WrapFrame(algo, opt.coordinate_scale, payload);
     const auto t1 = std::chrono::steady_clock::now();
 
     if (enable_metrics) {
@@ -49,6 +50,7 @@ StatusOr<DecodeOutput> Codec::Decode(const std::vector<uint8_t>& bytes, const Op
     const auto header_or = ParseHeader(bytes);
     if (!header_or.ok()) return header_or.status();
     const Algorithm algo = header_or.value().algorithm;
+    const CoordinateScale coordinate_scale = header_or.value().coordinate_scale;
 
     auto codec = CodecFactory::Create(algo);
     if (!codec) return Status::Error("codec: 该算法未启用或不受支持");
@@ -58,6 +60,7 @@ StatusOr<DecodeOutput> Codec::Decode(const std::vector<uint8_t>& bytes, const Op
 
     DecodeOutput out;
     out.algorithm = algo;
+    out.coordinate_scale = coordinate_scale;
     out.polygon_set = codec->DecodePayload(payload_view_or.value());
 
     const auto t1 = std::chrono::steady_clock::now();

@@ -1,5 +1,0 @@
-/workspace/polygon_codec/build/CMakeFiles/polygon_codec_lib.dir
-/workspace/polygon_codec/build/CMakeFiles/polygon_codec_tests.dir
-/workspace/polygon_codec/build/CMakeFiles/polygon_codec_bench.dir
-/workspace/polygon_codec/build/CMakeFiles/edit_cache.dir
-/workspace/polygon_codec/build/CMakeFiles/rebuild_cache.dir

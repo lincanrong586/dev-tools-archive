@@ -144,6 +144,61 @@ void AlgorithmEnumShapeShouldNotContainExperimentalAlgoTest() {
   Assert(static_cast<uint8_t>(Algorithm::kButt) == 7, "kButt should remain 7 after removing experimental algorithm");
 }
 
+void CoordinateScaleShouldRoundTripThroughFrameHeaderTest() {
+  using namespace polygon_codec;
+  const PolygonSet ps = BuildSamplePolygonSet();
+
+  Options opt;
+  opt.enable_metrics = false;
+  opt.print_metrics = false;
+  opt.coordinate_scale = CoordinateScale::kNm10;
+
+  const auto enc_or = Codec::Encode(ps, Algorithm::kDeltaVarint, opt);
+  Assert(enc_or.ok(), "encode should succeed");
+  if (!enc_or.ok()) return;
+
+  const auto header_or = ParseHeader(enc_or.value().bytes);
+  Assert(header_or.ok(), "parse header should succeed");
+  if (!header_or.ok()) return;
+
+  Assert(header_or.value().coordinate_scale == CoordinateScale::kNm10, "frame header should contain coordinate scale");
+
+  const auto dec_or = Codec::Decode(enc_or.value().bytes, opt);
+  Assert(dec_or.ok(), "decode should succeed");
+  if (!dec_or.ok()) return;
+
+  Assert(dec_or.value().coordinate_scale == CoordinateScale::kNm10, "decode output should contain coordinate scale");
+  Assert(dec_or.value().polygon_set == ps, "roundtrip should match");
+}
+
+void V1FrameShouldDefaultCoordinateScaleToNm1Test() {
+  using namespace polygon_codec;
+  const PolygonSet ps = BuildSamplePolygonSet();
+
+  Options opt;
+  opt.enable_metrics = false;
+  opt.print_metrics = false;
+  opt.coordinate_scale = CoordinateScale::kNm0p1;
+
+  const auto enc_or = Codec::Encode(ps, Algorithm::kBinOffsetVarint, opt);
+  Assert(enc_or.ok(), "encode should succeed");
+  if (!enc_or.ok()) return;
+
+  std::vector<uint8_t> bytes = enc_or.value().bytes;
+  bytes[4] = 1;
+
+  const auto header_or = ParseHeader(bytes);
+  Assert(header_or.ok(), "parse v1 header should succeed");
+  if (!header_or.ok()) return;
+  Assert(header_or.value().coordinate_scale == CoordinateScale::kNm1, "v1 frame should default scale to 1nm");
+
+  const auto dec_or = Codec::Decode(bytes, opt);
+  Assert(dec_or.ok(), "decode v1 bytes should succeed");
+  if (!dec_or.ok()) return;
+  Assert(dec_or.value().coordinate_scale == CoordinateScale::kNm1, "decode output should default scale for v1 bytes");
+  Assert(dec_or.value().polygon_set == ps, "v1 bytes roundtrip should match");
+}
+
 void TruncatedDataShouldFailDecodeTest() {
   using namespace polygon_codec;
   const PolygonSet ps = BuildSamplePolygonSet();
@@ -231,6 +286,8 @@ int main() {
     MetricsSwitchTest();
     PayloadViewShouldDecodeWithoutCopyTest();
     AlgorithmEnumShapeShouldNotContainExperimentalAlgoTest();
+    CoordinateScaleShouldRoundTripThroughFrameHeaderTest();
+    V1FrameShouldDefaultCoordinateScaleToNm1Test();
     TruncatedDataShouldFailDecodeTest();
     VarintBoundaryAndInvalidDataTest();
     EmptyAndTinyObjectsRoundTripTest();

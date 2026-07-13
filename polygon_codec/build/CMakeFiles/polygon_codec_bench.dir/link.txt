@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG "CMakeFiles/polygon_codec_bench.dir/bench-perftest/main.cc.o" "CMakeFiles/polygon_codec_bench.dir/bench-perftest/generate.cc.o" "CMakeFiles/polygon_codec_bench.dir/bench-perftest/report.cc.o" -o polygon_codec_bench  libpolygon_codec_lib.a 
